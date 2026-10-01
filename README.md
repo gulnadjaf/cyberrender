@@ -12,6 +12,7 @@ Dizaynerlər, memarlar, dizayn/memarlıq studiyaları və animatorlar üçün 4 
 | [`instagram/04-google-flow-is-axini.md`](instagram/04-google-flow-is-axini.md) | Flow-da addım-addım istehsal |
 | [`instagram/05-kontent-teqvimi.md`](instagram/05-kontent-teqvimi.md) | 4 həftəlik təqvim, grid ritmi, stories, ölçmə |
 | [`instagram/board.html`](instagram/board.html) | Kopyalama düymələri olan interaktiv board (eyni məzmun) |
+| [`instagram/batch-01/`](instagram/batch-01/README.md) | 1 karusel + 2 qrafik post: Flow promptları, Claude in Chrome tapşırığı, hazır 1080×1350 dizaynlar |
 | `instagram/assets/` | Loqo |
 
 ## Postları dəyişmək
@@ -20,6 +21,14 @@ Dizaynerlər, memarlar, dizayn/memarlıq studiyaları və animatorlar üçün 4 
 
 ```bash
 python3 scripts/build.py
+```
+
+## Batch 01 postlarını yığmaq
+
+Flow şəkillərini `instagram/batch-01/flow/`-a açar adı ilə qoy (`k1-cover.png` ...), sonra:
+
+```bash
+python3 scripts/compose.py   # Playwright lazımdır
 ```
 
 ## Paylaşmazdan əvvəl
