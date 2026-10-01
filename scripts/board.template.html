@@ -1,0 +1,456 @@
+<title>Cyber Render Post Paketi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Onest:wght@400;500;600&family=Tektur:wght@500;600;700&display=swap">
+<style>
+/* Layout: one 900px production column, like a render queue; the profile grid preview sits beside the summary on wide screens. */
+:root {
+  --paper: #F2FAEE;
+  --surface: #FBFFF9;
+  --sunken: #E6F3E1;
+  --line: #C9DCC2;
+  --fg: #2A2A2A;
+  --muted: #5A6458;
+  --accent: #2A2A2A;
+  --accent-fg: #DDFFD4;
+  --signal: #2E8A22;
+  --code-bg: #2A2A2A;
+  --code-fg: #DDFFD4;
+  --warn-bg: #FFF3D2;
+  --warn-fg: #6B4F00;
+  --warn-line: #E2C770;
+  --brand-mint: #DDFFD4;
+  --brand-char: #2A2A2A;
+  --font-display: "Tektur", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --font-body: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --cut: 12px;
+  --cut-s: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #151715; --surface: #1D201D; --sunken: #252925; --line: #343B33;
+    --fg: #E1EFDC; --muted: #9AA596; --accent: #DDFFD4; --accent-fg: #1B1D1B; --signal: #7DFA6A;
+    --code-bg: #0E100E; --code-fg: #CFEFC6; --warn-bg: #2C2817; --warn-fg: #F0D88C; --warn-line: #5E5122;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #151715; --surface: #1D201D; --sunken: #252925; --line: #343B33;
+  --fg: #E1EFDC; --muted: #9AA596; --accent: #DDFFD4; --accent-fg: #1B1D1B; --signal: #7DFA6A;
+  --code-bg: #0E100E; --code-fg: #CFEFC6; --warn-bg: #2C2817; --warn-fg: #F0D88C; --warn-line: #5E5122;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 64px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  background: var(--paper);
+  color: var(--fg);
+  font: 400 15px/1.6 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 900px; margin: 0 auto; padding-inline: 16px; padding-block: 0 72px; }
+.wrap-head { padding-block: 0 8px; }
+a { color: inherit; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: .01em; }
+p { margin: 0; }
+.cut { clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut)); }
+.label { font: 500 11px/1.4 var(--font-mono); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+
+/* top */
+.top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 330px); gap: 32px; padding-block: 40px 28px; align-items: start; }
+.logo { width: 150px; aspect-ratio: 520 / 295; background: var(--fg);
+  -webkit-mask: url("data:image/png;base64,{{LOGO}}") center / contain no-repeat;
+          mask: url("data:image/png;base64,{{LOGO}}") center / contain no-repeat; }
+.top h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 700; line-height: 1.05; text-transform: uppercase; margin-top: 22px; }
+.lede { margin-top: 14px; max-width: 54ch; color: var(--muted); font-size: 16px; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.stat { background: var(--sunken); padding: 6px 12px; font: 500 12px/1.4 var(--font-mono); clip-path: polygon(var(--cut-s) 0, 100% 0, 100% calc(100% - var(--cut-s)), calc(100% - var(--cut-s)) 100%, 0 100%, 0 var(--cut-s)); }
+.stat b { font-weight: 500; color: var(--fg); }
+.notice { margin-top: 18px; background: var(--warn-bg); color: var(--warn-fg); border: 1px solid var(--warn-line); padding: 10px 14px; font-size: 13.5px; max-width: 60ch; }
+.notice code { font-family: var(--font-mono); font-size: 12.5px; }
+
+/* grid preview */
+.grid-card { background: var(--surface); padding: 14px; }
+.grid-card .label { display: flex; justify-content: space-between; margin-bottom: 10px; }
+.ig-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; }
+.tile { aspect-ratio: 4 / 5; max-width: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 8px; text-decoration: none; overflow: hidden; transition: transform .15s ease; }
+.tile:hover { transform: translateY(-2px); }
+@media (prefers-reduced-motion: reduce) { .tile { transition: none; } .tile:hover { transform: none; } }
+.tile-D { background: var(--brand-char); color: var(--brand-mint); }
+.tile-M { background: var(--brand-mint); color: var(--brand-char); }
+.t-top, .t-bot { font: 500 9.5px/1.2 var(--font-mono); display: flex; justify-content: space-between; letter-spacing: .04em; }
+.t-bot { opacity: .7; }
+.t-hook { font: 600 clamp(9px, 1.25vw, 11.5px)/1.2 var(--font-display); text-transform: uppercase; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.grid-note { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+
+/* nav */
+.nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--paper); border-bottom: 1px solid var(--line); }
+.nav-in { max-width: 900px; margin: 0 auto; padding-inline: 16px; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.nav a { font: 500 12px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .1em; text-decoration: none; padding: 16px 10px; color: var(--muted); white-space: nowrap; }
+.nav a:hover { color: var(--fg); }
+
+section { padding-top: 48px; }
+.sec-h { display: flex; align-items: baseline; gap: 14px; margin-bottom: 20px; }
+.sec-h h2 { font-size: clamp(22px, 3.4vw, 30px); text-transform: uppercase; font-weight: 700; }
+.sec-intro { color: var(--muted); max-width: 62ch; margin: -8px 0 20px; }
+
+/* filters */
+.filters { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+.frow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.frow .label { width: 76px; }
+.fbtn { font: 500 12.5px/1 var(--font-body); background: var(--sunken); color: var(--fg); border: 0; padding: 8px 12px; cursor: pointer; clip-path: polygon(var(--cut-s) 0, 100% 0, 100% calc(100% - var(--cut-s)), calc(100% - var(--cut-s)) 100%, 0 100%, 0 var(--cut-s)); }
+.fbtn[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.empty { color: var(--muted); padding: 20px 0; }
+
+/* post card */
+.posts { display: flex; flex-direction: column; gap: 18px; }
+.post { background: var(--surface); padding: 22px 22px 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0;
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut)); }
+.post-head { display: flex; flex-direction: column; gap: 8px; }
+.post-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ord { font: 600 13px/1 var(--font-mono); color: var(--fg); }
+.date { font: 400 12px/1 var(--font-mono); color: var(--muted); }
+.tone { display: inline-grid; place-items: center; width: 22px; height: 22px; font: 600 11px/1 var(--font-mono); margin-left: auto; outline: 1px solid var(--line); }
+.tone-D { background: var(--brand-char); color: var(--brand-mint); }
+.tone-M { background: var(--brand-mint); color: var(--brand-char); }
+td .tone { margin-left: 0; }
+.pid { font: 500 12px/1.3 var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.hook { font-size: clamp(21px, 3.2vw, 27px); line-height: 1.15; font-weight: 600; }
+.fmt { font-size: 13.5px; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 11.5px/1 var(--font-mono); padding: 6px 9px; background: var(--sunken); color: var(--fg); }
+.chip.pillar { background: var(--accent); color: var(--accent-fg); }
+.chip.trig { background: transparent; outline: 1px solid var(--line); outline-offset: -1px; color: var(--muted); }
+.idea { max-width: 68ch; }
+
+details.blk { border-top: 1px solid var(--line); }
+details.blk > summary { cursor: pointer; list-style: none; padding: 12px 0 10px; font: 600 14px/1.3 var(--font-body); display: flex; align-items: center; gap: 8px; }
+details.blk > summary::-webkit-details-marker { display: none; }
+details.blk > summary::before { content: ""; width: 8px; height: 8px; border-right: 2px solid var(--fg); border-bottom: 2px solid var(--fg); transform: rotate(-45deg); transition: transform .15s; margin-right: 4px; }
+details.blk[open] > summary::before { transform: rotate(45deg); }
+.n { font: 500 11px/1 var(--font-mono); color: var(--muted); }
+.blk-body { display: flex; flex-direction: column; gap: 18px; padding-bottom: 10px; }
+.shot { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.shot-label { font: 600 13.5px/1.3 var(--font-body); }
+.mode { align-self: flex-start; font: 500 11px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--signal); }
+.code { position: relative; background: var(--code-bg); color: var(--code-fg); min-width: 0;
+  clip-path: polygon(0 0, calc(100% - var(--cut-s)) 0, 100% var(--cut-s), 100% 100%, 0 100%); }
+.code pre { margin: 0; padding: 14px 14px 44px; font: 400 12.5px/1.6 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.copy { position: absolute; right: 8px; bottom: 8px; font: 500 11.5px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .08em; background: var(--brand-mint); color: var(--brand-char); border: 0; padding: 8px 12px; cursor: pointer;
+  clip-path: polygon(var(--cut-s) 0, 100% 0, 100% calc(100% - var(--cut-s)), calc(100% - var(--cut-s)) 100%, 0 100%, 0 var(--cut-s)); }
+.copy.done { background: var(--signal); color: var(--brand-char); }
+.overlay { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: baseline; background: var(--sunken); padding: 10px 12px; }
+.ov-tag { font: 500 10.5px/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.overlay p { font: 500 14px/1.45 var(--font-body); }
+.cta { display: flex; gap: 10px; align-items: baseline; font-weight: 500; border-top: 1px solid var(--line); padding-top: 12px; }
+.cta span { font: 600 11px/1 var(--font-mono); letter-spacing: .1em; color: var(--signal); }
+.notes, .verify { font-size: 14px; }
+.notes ul, .verify ul { margin: 4px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+.notes-h { font: 600 11px/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.verify { background: var(--warn-bg); color: var(--warn-fg); border: 1px solid var(--warn-line); padding: 10px 14px; }
+.verify .notes-h { color: var(--warn-fg); }
+
+/* rules */
+.palette { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.sw { border: 0; text-align: left; padding: 0; cursor: pointer; background: var(--surface); color: var(--fg); font: inherit; display: flex; flex-direction: column; }
+.sw-chip { height: 76px; outline: 1px solid var(--line); outline-offset: -1px; }
+.sw-meta { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 2px; }
+.sw-name { font: 600 14px/1.2 var(--font-display); text-transform: uppercase; }
+.sw-hex { font: 500 12px/1.2 var(--font-mono); }
+.sw-role { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.sw-src { font: 500 10px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .1em; color: var(--signal); margin-top: 4px; }
+.type { display: flex; flex-direction: column; gap: 10px; margin-top: 26px; }
+.type-row { background: var(--surface); padding: 14px 16px; display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 14px; align-items: center; }
+.type-row .spec { font-size: 22px; line-height: 1.2; overflow-wrap: anywhere; }
+.warn-line { margin-top: 10px; font-size: 13.5px; background: var(--warn-bg); color: var(--warn-fg); border: 1px solid var(--warn-line); padding: 10px 14px; }
+.rule-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 26px; }
+.rg { background: var(--surface); padding: 18px; min-width: 0; }
+.rg h3 { font-size: 15px; text-transform: uppercase; margin-bottom: 12px; }
+.rg ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.rg li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 8px; font-size: 14px; line-height: 1.45; }
+.rg li code { font: 600 11.5px/1.6 var(--font-mono); color: var(--signal); }
+.rg-wide { grid-column: 1 / -1; }
+.tbl-wrap { overflow-x: auto; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 11px/1.3 var(--font-mono); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.sub { color: var(--muted); font-family: var(--font-mono); font-size: 12px; }
+.block-h { font: 600 15px/1.3 var(--font-display); text-transform: uppercase; margin: 26px 0 10px; }
+
+/* flow */
+.steps { list-style: none; padding: 0; margin: 0; counter-reset: s; display: flex; flex-direction: column; gap: 10px; }
+.steps li { counter-increment: s; background: var(--surface); padding: 14px 16px 14px 60px; position: relative; }
+.steps li::before { content: counter(s, decimal-leading-zero); position: absolute; left: 16px; top: 14px; font: 600 15px/1.4 var(--font-mono); color: var(--signal); }
+.steps b { display: block; font-family: var(--font-display); text-transform: uppercase; font-weight: 600; margin-bottom: 2px; }
+.stories { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+
+/* verify */
+.checklist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.checklist li { background: var(--surface); padding: 10px 14px; display: flex; gap: 12px; align-items: flex-start; }
+.checklist input { margin-top: 4px; accent-color: var(--signal); width: 16px; height: 16px; flex: none; }
+.checklist label { cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+.checklist .src { font: 500 10.5px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.checklist input:checked + label { color: var(--muted); text-decoration: line-through; }
+.progress { font: 500 12px/1 var(--font-mono); color: var(--muted); margin-bottom: 10px; }
+footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+
+@media (max-width: 760px) {
+  .top { grid-template-columns: minmax(0, 1fr); gap: 22px; padding-block: 28px 20px; }
+  .rule-groups { grid-template-columns: minmax(0, 1fr); }
+  .palette { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .type-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .post { padding: 18px 16px 16px; }
+  .frow .label { width: 100%; }
+}
+</style>
+
+<div class="wrap wrap-head">
+  <div class="top">
+    <div>
+      <div class="logo" role="img" aria-label="Cyber Render"></div>
+      <h1>Instagram kontent paketi</h1>
+      <p class="lede">Dizaynerlər, memarlar, studiyalar və animatorlar üçün 4 həftəlik post seriyası. Hər postda hook, Google Flow promptları, ekran mətni, caption və CTA var. Promptları kopyalayıb birbaşa Flow-a yapışdır.</p>
+      <div class="stats">
+        <span class="stat"><b>{{N_POSTS}}</b> post</span>
+        <span class="stat"><b>{{N_REEL}}</b> reel</span>
+        <span class="stat"><b>{{N_CAROUSEL}}</b> karusel</span>
+        <span class="stat">{{START}} → {{END}}</span>
+        <span class="stat">B.e. · Ç. · C. · {{TIME}}</span>
+      </div>
+      <p class="notice">Sayt və Instagram bu iş mühitindən açılmadı. <code>[kvadrat mötərizədə]</code> olan hər şeyi (proqram siyahısı, qiymət, proses, sürət) paylaşmazdan əvvəl saytla yoxla. Siyahı: <a href="#yoxla">Yoxla</a> bölməsi.</p>
+    </div>
+    <div class="grid-card cut" id="grid">
+      <p class="label"><span>Profil gridi · ay sonu</span><span>D / M</span></p>
+      <div class="ig-grid">
+{{GRID}}
+      </div>
+      <p class="grid-note">Qaranlıq və nanə örtüklər növbə ilə gəlir. 3 sütunda bu, şahmat taxtası yaradır. Plitəyə toxun, posta keç.</p>
+    </div>
+  </div>
+</div>
+
+<nav class="nav" aria-label="Bölmələr">
+  <div class="nav-in">
+    <a href="#postlar">Postlar</a>
+    <a href="#qaydalar">Qaydalar</a>
+    <a href="#flow">Flow</a>
+    <a href="#teqvim">Təqvim</a>
+    <a href="#yoxla">Yoxla</a>
+  </div>
+</nav>
+
+<div class="wrap">
+  <section id="postlar">
+    <div class="sec-h"><span class="label">01</span><h2>Postlar</h2></div>
+    <div class="filters" role="group" aria-label="Postları süz">
+      <div class="frow" data-group="seg">
+        <span class="label">Seqment</span>
+        <button type="button" class="fbtn" aria-pressed="true" data-v="">Hamısı</button>
+        <button type="button" class="fbtn" aria-pressed="false" data-v="Memarlar">Memarlar</button>
+        <button type="button" class="fbtn" aria-pressed="false" data-v="İnteryer">İnteryer</button>
+        <button type="button" class="fbtn" aria-pressed="false" data-v="Studiyalar">Studiyalar</button>
+        <button type="button" class="fbtn" aria-pressed="false" data-v="Animatorlar">Animatorlar</button>
+        <button type="button" class="fbtn" aria-pressed="false" data-v="Frilanserlər">Frilanserlər</button>
+      </div>
+      <div class="frow" data-group="kind">
+        <span class="label">Format</span>
+        <button type="button" class="fbtn" aria-pressed="true" data-v="">Hamısı</button>
+        <button type="button" class="fbtn" aria-pressed="false" data-v="Reel">Reel</button>
+        <button type="button" class="fbtn" aria-pressed="false" data-v="Karusel">Karusel</button>
+      </div>
+    </div>
+    <div class="posts" id="posts">
+{{POSTS}}
+    </div>
+    <p class="empty" id="empty" hidden>Bu süzgəcə uyğun post yoxdur.</p>
+  </section>
+
+  <section id="qaydalar">
+    <div class="sec-h"><span class="label">02</span><h2>Rule set</h2></div>
+    <p class="sec-intro">Hər postdan əvvəl yoxlanan qaydalar. Kodlar post kartlarında istinad kimi işlənir. Tam versiya repodadır: <code>instagram/02-rule-set.md</code>.</p>
+
+    <div class="palette">
+      <button type="button" class="sw cut" data-copy="#DDFFD4"><span class="sw-chip" style="background:#DDFFD4"></span><span class="sw-meta"><span class="sw-name">Mint</span><span class="sw-hex">#DDFFD4</span><span class="sw-role">Əsas fon, işıq imzası</span><span class="sw-src">loqodan</span></span></button>
+      <button type="button" class="sw cut" data-copy="#2A2A2A"><span class="sw-chip" style="background:#2A2A2A"></span><span class="sw-meta"><span class="sw-name">Charcoal</span><span class="sw-hex">#2A2A2A</span><span class="sw-role">Mətn, qaranlıq postlar</span><span class="sw-src">loqodan</span></span></button>
+      <button type="button" class="sw cut" data-copy="#1B1D1B"><span class="sw-chip" style="background:#1B1D1B"></span><span class="sw-meta"><span class="sw-name">Ink</span><span class="sw-hex">#1B1D1B</span><span class="sw-role">Gecə səhnələri</span><span class="sw-src">törəmə</span></span></button>
+      <button type="button" class="sw cut" data-copy="#B6EFA9"><span class="sw-chip" style="background:#B6EFA9"></span><span class="sw-meta"><span class="sw-name">Mint 300</span><span class="sw-hex">#B6EFA9</span><span class="sw-role">İkinci forma, xətlər</span><span class="sw-src">törəmə</span></span></button>
+      <button type="button" class="sw cut" data-copy="#7DFA6A"><span class="sw-chip" style="background:#7DFA6A"></span><span class="sw-meta"><span class="sw-name">Signal</span><span class="sw-hex">#7DFA6A</span><span class="sw-role">Kiçik vurğu, kadrın &lt;5%-i</span><span class="sw-src">törəmə</span></span></button>
+      <button type="button" class="sw cut" data-copy="#8C948A"><span class="sw-chip" style="background:#8C948A"></span><span class="sw-meta"><span class="sw-name">Fog</span><span class="sw-hex">#8C948A</span><span class="sw-role">Kiçik yazılar</span><span class="sw-src">törəmə</span></span></button>
+    </div>
+
+    <div class="type">
+      <div class="type-row cut"><span class="label">Başlıq · Tektur</span><span class="spec" style="font-family:var(--font-display);font-weight:600;text-transform:uppercase">Ə ə Ğ ğ I ı Ş ş Ç ç Ö ö Ü ü</span></div>
+      <div class="type-row cut"><span class="label">Mətn · Onest</span><span class="spec" style="font-family:var(--font-body)">Sən təsəvvür et. Biz hesablayaq.</span></div>
+      <div class="type-row cut"><span class="label">Texniki · JetBrains Mono</span><span class="spec" style="font-family:var(--font-mono);font-size:18px">1 500 × 4 dəq = 100 saat</span></div>
+    </div>
+    <p class="warn-line">Orbitron və Michroma loqoya bənzəyir, amma onlarda <b>Ə / ə</b> yoxdur. Bu şriftlərdə azərbaycanca başlıq qırılır. Yuxarıdakı üç şriftin hamısında Azərbaycan hərfləri yoxlanıb.</p>
+
+    <div class="rule-groups">
+      <div class="rg cut">
+        <h3>Vizual</h3>
+        <ol>
+          <li><code>V1</code><span>Brend qrafikasının 80%-i Mint + Charcoal-dır.</span></li>
+          <li><code>V2</code><span>Render kadrları təbii qalır, amma hər kadrda bir nanə işıq və ya element olur.</span></li>
+          <li><code>V3</code><span>Örtüklər növbə ilə D/M gəlir, grid şahmat taxtası olur.</span></li>
+          <li><code>V4</code><span>Künclər loqodakı kimi 30°/45° kəsikdir. Yumru düymə yoxdur.</span></li>
+          <li><code>V6</code><span>Bir kadrda ən çox 7 söz, bir slaydda bir fikir.</span></li>
+          <li><code>V7</code><span>Reels-də aşağı 20% və sağ 15% mətnsiz qalır.</span></li>
+          <li><code>V9</code><span>AI vizual atmosfer üçündür. “Bizim render” deyilən hər şey yalnız real render olur.</span></li>
+          <li><code>V10</code><span>Proqram interfeysi və progress bar real ekran yazısı və ya montaj qrafikasıdır, AI deyil.</span></li>
+          <li><code>V11</code><span>Flow-da yazı və loqo yaradılmır. Mətn montajda əlavə olunur.</span></li>
+          <li><code>V13</code><span>Bir klipdə bir kamera hərəkəti. İmza keçidlər: Clay → Final, Noise → Clean.</span></li>
+          <li><code>V14</code><span>Səs imzası: ventilyator → sükut → ding.</span></li>
+          <li><code>V15</code><span>Loqo yalnız son kadrda (1.5 san), heç vaxt əvvəldə.</span></li>
+        </ol>
+      </div>
+      <div class="rg cut">
+        <h3>Mətn</h3>
+        <ol>
+          <li><code>M1</code><span>Hook ilk saniyədədir. Növlər: saat, riyaziyyat, seqmenti çağırmaq, gizli həqiqət, ziddiyyət, POV.</span></li>
+          <li><code>M2</code><span>Həmkar dili, “sən” forması. Render, sample, noise, rakurs, klient. Korporativ dil yoxdur.</span></li>
+          <li><code>M3</code><span>Bir post = bir emosiya = bir CTA.</span></li>
+          <li><code>M4</code><span>Caption: hook (≤125 simvol) → ağrı → çıxış yolu → detal → CTA → 5–8 heşteq.</span></li>
+          <li><code>M5</code><span>CTA pilləkəni: yadda saxla/paylaş → şərhə yaz → DM. Açar sözlər: RENDER, STUDIO, KADR.</span></li>
+          <li><code>M6</code><span>Rəqəm yalnız doğrudursa. Arifmetika olar, təsdiqlənməmiş sürət və qiymət olmaz.</span></li>
+          <li><code>M7</code><span>Heşteqlər: niş + sahə + yerli + #cyberrender.</span></li>
+        </ol>
+      </div>
+      <div class="rg cut rg-wide">
+        <h3>Psixoloji tətiklər (etik çərçivədə)</h3>
+        <ol>
+          <li><code>P1</code><span><b>İtki qorxusu.</b> Gecələr, yuxu, klient, saatlar. P01, P08</span></li>
+          <li><code>P2</code><span><b>Konkret riyaziyyat.</b> “Vaxt itir” yox, “100 saat”. P02, P11</span></li>
+          <li><code>P3</code><span><b>Qrup kimliyi.</b> “Bunu yalnız 3D adamı başa düşər”. Paylaşım gətirir. P05</span></li>
+          <li><code>P4</code><span><b>Kontrast.</b> Gecə/səhər, clay/final, noise/clean. P01, P03, P06</span></li>
+          <li><code>P5</code><span><b>Qarşılıqlılıq.</b> Əvvəl pulsuz bilik, sonra xidmət. P07</span></li>
+          <li><code>P6</code><span><b>Status.</b> Klientin “vau”su, qalib təqdimat. P08, P10</span></li>
+          <li><code>P7</code><span><b>Kiçik öhdəlik.</b> Bir söz şərh, sonra DM, sonra sifariş. P02, P04, P11</span></li>
+          <li><code>P8</code><span><b>Sağlam düşüncə.</b> Workstation-ın gizli xərcləri. P09</span></li>
+          <li><code>P9</code><span><b>Təcililik.</b> Yalnız real, müddətli təklif olanda.</span></li>
+        </ol>
+        <p class="grid-note">Qadağan: saxta rəy, saxta klient işi, saxta “son 3 yer”, təsdiqlənməmiş sürət və qiymət. Peşəkar auditoriya bunu dərhal tutur və brendə inam bir postla itir.</p>
+      </div>
+    </div>
+
+    <p class="block-h">Brend görünüşü bloku (hər Flow promptunun sonu)</p>
+    {{LOOK}}
+    <p class="block-h">Maskot “Gil”: personaj kartı</p>
+    {{GIL}}
+  </section>
+
+  <section id="flow">
+    <div class="sec-h"><span class="label">03</span><h2>Google Flow iş axını</h2></div>
+    <ol class="steps">
+      <li><b>Ingredientləri yarat</b>Studiya otağı, Gil maket, Gil personaj kartı, Bakı mənzili (final + clay). Hər birindən 4 variant yarat, ən təmizini saxla.</li>
+      <li><b>Rejimi seç</b>Atmosfer: Text to Video. Eyni məkan və ya personaj: Ingredients to Video. Clay → Final: Frames to Video. 8 saniyədən uzun: Extend və ya Scenebuilder.</li>
+      <li><b>Əvvəl ucuz, sonra keyfiyyət</b>Promptu sürətli modeldə 2–4 variantla kilidlə. Seçilmiş klipi keyfiyyət modelində yenidən yarat və böyüt.</li>
+      <li><b>Kadrı yoxla</b>Saxta yazı, təhrif olunmuş üz və qırıq fizika olmamalıdır. Nanə imza işığı kadrda olmalıdır.</li>
+      <li><b>Montaj (CapCut / Canva)</b>1080×1920 və ya 1080×1350 ölçü. Hook 0-cı saniyədə, mətn təhlükəsiz zonada, son kadr şablonu, lisenziyalı musiqi.</li>
+      <li><b>Paylaş</b>Fotoreal AI üçün “AI info” etiketi. Caption və heşteqlər kartdan. İlk 30 dəqiqədə şərhlərə cavab.</li>
+    </ol>
+  </section>
+
+  <section id="teqvim">
+    <div class="sec-h"><span class="label">04</span><h2>Təqvim</h2></div>
+    <div class="tbl-wrap cut">
+      <table>
+        <thead><tr><th>#</th><th>Gün</th><th>Post</th><th>Format</th><th>Seqment</th><th>CTA</th><th>Grid</th></tr></thead>
+        <tbody>
+{{CAL_ROWS}}
+        </tbody>
+      </table>
+    </div>
+    <p class="block-h">Stories (həftədə 3–5)</p>
+    <ul class="stories">{{STORIES}}</ul>
+  </section>
+
+  <section id="yoxla">
+    <div class="sec-h"><span class="label">05</span><h2>Yoxla</h2></div>
+    <p class="sec-intro">Saytdan təsdiq olunmalı faktlar. Qeydlər yalnız bu brauzerdə saxlanır.</p>
+    <p class="progress" id="progress"></p>
+    <ul class="checklist" id="checklist">
+{{VERIFY}}
+    </ul>
+  </section>
+
+  <footer>Mənbə: <a href="https://github.com/gulnadjaf/cyberrender" target="_blank" rel="noopener">github.com/gulnadjaf/cyberrender</a> · <code>instagram/</code> qovluğu. Postları dəyişmək üçün <code>instagram/data/posts.py</code>, sonra <code>python3 scripts/build.py</code>.</footer>
+</div>
+
+<script>
+(function () {
+  // copy buttons (prompts, captions, swatches)
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-copy]');
+    if (!btn) return;
+    var text = btn.getAttribute('data-copy');
+    var label = btn.classList.contains('copy') ? btn.textContent : null;
+    function ok() {
+      if (label === null) return;
+      btn.textContent = 'Kopyalandı';
+      btn.classList.add('done');
+      setTimeout(function () { btn.textContent = label; btn.classList.remove('done'); }, 1400);
+    }
+    function fallback() {
+      var pre = btn.parentElement && btn.parentElement.querySelector('pre');
+      if (!pre) return;
+      var r = document.createRange(); r.selectNodeContents(pre);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      if (label !== null) btn.textContent = 'Seçildi, kopyala';
+    }
+    try {
+      navigator.clipboard.writeText(text).then(ok, fallback);
+    } catch (err) { fallback(); }
+  });
+
+  // filters
+  var state = { seg: '', kind: '' };
+  var posts = Array.prototype.slice.call(document.querySelectorAll('.post'));
+  var empty = document.getElementById('empty');
+  function apply() {
+    var shown = 0;
+    posts.forEach(function (p) {
+      var segs = p.getAttribute('data-seg').split('|');
+      var segOk = !state.seg || segs.indexOf(state.seg) > -1 || segs.indexOf('Hamısı') > -1;
+      var kindOk = !state.kind || p.getAttribute('data-kind') === state.kind;
+      p.hidden = !(segOk && kindOk);
+      if (!p.hidden) shown++;
+    });
+    empty.hidden = shown > 0;
+  }
+  document.querySelectorAll('.frow').forEach(function (row) {
+    var group = row.getAttribute('data-group');
+    row.addEventListener('click', function (e) {
+      var b = e.target.closest('.fbtn');
+      if (!b) return;
+      row.querySelectorAll('.fbtn').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      state[group] = b.getAttribute('data-v');
+      apply();
+    });
+  });
+
+  // verify checklist (per-viewer convenience only)
+  var KEY = 'cr-verify-v1';
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { saved = {}; }
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('#checklist input'));
+  var progress = document.getElementById('progress');
+  function count() {
+    var done = boxes.filter(function (b) { return b.checked; }).length;
+    progress.textContent = done + ' / ' + boxes.length + ' təsdiqlənib';
+  }
+  boxes.forEach(function (b) {
+    b.checked = !!saved[b.getAttribute('data-key')];
+    b.addEventListener('change', function () {
+      saved[b.getAttribute('data-key')] = b.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
+      count();
+    });
+  });
+  count();
+})();
+</script>
